@@ -1,0 +1,24 @@
+# Lista blanca: se ignora todo y solo se versiona lo que se permite abajo.
+/*
+!/.gitignore
+!/README.md
+!/main.py
+!/requirements.txt
+!/requirements-dev.txt
+!/.env.example
+!/pytest.ini
+
+# Nunca se versionan (ya quedan fuera por la lista blanca; se dejan explícitos).
+.env
+historial.db
+respaldos/
+miniaturas/
+reporte_pruebas/
+tests/
+.venv/
+.idea/
+*.onnx
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
