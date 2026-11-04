@@ -132,6 +132,10 @@ INTERVALO_RECONFIGURACION_IA_SEGUNDOS = 60
 # imágenes; este patrón descarta preview, experimentales y variantes de voz,
 # audio o generación de imágenes.
 PATRON_MODELO_FLASH = re.compile(r"^gemini-(\d+(?:\.\d+)*)-flash(-lite)?$")
+# Modelos que nunca se usan (ni como principal ni como alternativa). Se cambia con
+# GEMINI_MODELOS_EXCLUIDOS en .env; si la variable no está, se usa este valor.
+# gemini-3.8-flash: su nivel gratuito es de solo 20 consultas por día.
+MODELOS_EXCLUIDOS_POR_DEFECTO = "gemini-3.8-flash"
 
 CLASES_CONSTRUCCION = ["Concreto armado", "Ladrillo/Albañilería", "Adobe", "Madera", "Mixta"]
 CLASES_DANO = ["Leve", "Moderado", "Severo/Colapso"]
@@ -940,21 +944,34 @@ def _orden_modelo(nombre):
     return coincidencia.group(2) is None, tuple(int(n) for n in coincidencia.group(1).split("."))
 
 
-def candidatos_gemini(disponibles, preferido):
+def modelos_excluidos(config):
+    """GEMINI_MODELOS_EXCLUIDOS: lista separada por comas. Sin la variable, el valor
+    por defecto; vacía, no se excluye ninguno."""
+    valor = config.get("GEMINI_MODELOS_EXCLUIDOS")
+    if valor is None:
+        valor = MODELOS_EXCLUIDOS_POR_DEFECTO
+    return {m.strip().lower().removeprefix("models/") for m in valor.split(",") if m.strip()}
+
+
+def candidatos_gemini(disponibles, preferido, excluidos=frozenset()):
     """Modelos en orden de preferencia: GEMINI_MODEL (si es un Flash listado
     para la clave) y luego los Flash estables de versión más alta, Flash antes
-    que Flash-Lite."""
+    que Flash-Lite. Los `excluidos` no aparecen en ningún lugar de la lista."""
     automaticos = sorted(
-        (nombre for nombre in disponibles if PATRON_MODELO_FLASH.match(nombre)),
+        (nombre for nombre in disponibles if PATRON_MODELO_FLASH.match(nombre) and nombre not in excluidos),
         key=_orden_modelo, reverse=True,
     )
     if preferido:
-        if preferido in disponibles and "flash" in preferido:
+        if preferido in excluidos:
+            logger.warning("GEMINI_MODEL=%s está en GEMINI_MODELOS_EXCLUIDOS; "
+                           "se elige un modelo automáticamente", preferido)
+        elif preferido in disponibles and "flash" in preferido:
             return [preferido] + [m for m in automaticos if m != preferido]
-        logger.warning(
-            "GEMINI_MODEL=%s no está disponible para esta clave o no es Flash; "
-            "se elige un modelo automáticamente", preferido,
-        )
+        else:
+            logger.warning(
+                "GEMINI_MODEL=%s no está disponible para esta clave o no es Flash; "
+                "se elige un modelo automáticamente", preferido,
+            )
     return automaticos
 
 
@@ -1047,7 +1064,10 @@ def configurar_gemini(config=None):
     # Que un modelo aparezca en el listado no garantiza que la clave pueda
     # usarlo (p. ej. retirado para usuarios nuevos, o sin cuota gratuita), así
     # que se prueba cada candidato con una llamada mínima.
-    candidatos = candidatos_gemini(disponibles, (config.get("GEMINI_MODEL") or "").strip())
+    excluidos = modelos_excluidos(config)
+    if excluidos:
+        logger.info("Modelos Gemini excluidos (GEMINI_MODELOS_EXCLUIDOS): %s", ", ".join(sorted(excluidos)))
+    candidatos = candidatos_gemini(disponibles, (config.get("GEMINI_MODEL") or "").strip(), excluidos)
     descartados = set()  # fallaron con un error permanente (p. ej. 404 retirado): no sirven de alternativa
     hubo_transitoria = False
     for modelo in candidatos[:MAXIMO_MODELOS_A_PROBAR]:
