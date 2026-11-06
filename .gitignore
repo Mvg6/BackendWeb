@@ -8,6 +8,12 @@
 !/.env.example
 !/pytest.ini
 !/tests/
+!/pool_claves.py
+!/pool_keys.py
+!/pruebas_apis/
+/pruebas_apis/*
+!/pruebas_apis/carga.py
+!/pruebas_apis/prueba_real.py
 
 # Nunca se versionan (ya quedan fuera por la lista blanca; se dejan explícitos).
 .env
@@ -22,3 +28,5 @@ __pycache__/
 *.py[cod]
 .pytest_cache/
 .coverage
+# Resultados de las pruebas de carga y real: nunca se suben.
+pruebas_apis/resultados*.csv

@@ -148,6 +148,97 @@ FUNCION_PROBADA = {
     "test_pdf_muestra_la_advertencia_de_imagen_no_valida": "exportar_historial_pdf",
     "test_reportes_vacios_se_generan": "exportar_historial_excel / exportar_historial_pdf",
     "test_texto_explicacion": "texto_explicacion",
+    # test_pool_ia
+    "test_las_claves_se_guardan_cifradas": "pool_claves (cifrado Fernet)",
+    "test_clave_maestra_se_genera_sin_mostrarse": "pool_claves (cifrado Fernet)",
+    "test_clave_maestra_invalida_no_rompe_el_arranque": "preparar_pool",
+    "test_enmascarar": "pool_claves (enmascarado)",
+    "test_repr_de_una_clave_no_la_muestra": "pool_claves (enmascarado)",
+    "test_ninguna_clave_completa_en_logs_ni_en_estado": "pool_claves (enmascarado)",
+    "test_migracion_importa_las_claves_de_env_solo_con_la_tabla_vacia": "preparar_pool (migración desde .env)",
+    "test_groq_sin_modelo_se_elige_uno_con_imagenes_y_se_guarda": "asegurar_modelo_groq / elegir_modelo_groq",
+    "test_elegir_modelo_groq_consulta_models_y_prueba_con_imagen": "asegurar_modelo_groq / elegir_modelo_groq",
+    "test_seleccion_por_prioridad_y_luego_la_menos_usada_hoy": "pool_claves.disponibles (selección)",
+    "test_agregar_rechaza_proveedor_invalido_y_clave_repetida": "pool_claves.agregar",
+    "test_503_deja_la_clave_en_espera_60_s_y_responde_la_siguiente": "obtener_explicacion (rotación y cooldowns)",
+    "test_timeout_o_500_tambien_dejan_60_s": "obtener_explicacion (rotación y cooldowns)",
+    "test_429_espera_lo_que_pide_el_proveedor": "obtener_explicacion (rotación y cooldowns)",
+    "test_429_por_cupo_diario_espera_hasta_la_medianoche_del_pacifico": "obtener_explicacion (rotación y cooldowns)",
+    "test_groq_429_con_retry_after_pasa_a_gemini": "obtener_explicacion (rotación y cooldowns)",
+    "test_groq_429_por_cupo_diario_espera_hasta_la_medianoche_utc": "obtener_explicacion (rotación y cooldowns)",
+    "test_401_o_403_desactivan_la_clave": "obtener_explicacion (rotación y cooldowns)",
+    "test_400_de_clave_invalida_de_gemini_tambien_la_desactiva": "obtener_explicacion (rotación y cooldowns)",
+    "test_dos_claves_gemini_rotan_entre_si": "obtener_explicacion (rotación y cooldowns)",
+    "test_a_igual_prioridad_se_reparte_entre_las_claves": "obtener_explicacion (rotación y cooldowns)",
+    "test_todas_caidas_devuelve_el_onnx_sin_inventar_explicacion": "obtener_explicacion (todas caídas y tope total)",
+    "test_sin_claves_disponibles_no_llama_a_nadie": "obtener_explicacion (todas caídas y tope total)",
+    "test_sin_sesion_sin_claves_disponibles_no_gasta_la_cuota": "obtener_explicacion (todas caídas y tope total)",
+    "test_tope_total_de_60_s_entre_todas_las_claves": "obtener_explicacion (todas caídas y tope total)",
+    "test_la_ia_no_altera_el_nivel_de_dano_ni_el_rescatable": "validar_respuesta_ia (la IA no altera el ONNX)",
+    "test_respuesta_que_no_valida_se_rechaza": "validar_respuesta_ia (la IA no altera el ONNX)",
+    "test_validar_respuesta_acepta_cercas_y_normaliza_tipos": "validar_respuesta_ia (la IA no altera el ONNX)",
+    "test_respuesta_fuera_de_esquema_de_groq_se_reintenta_si_es_la_ultima": "validar_respuesta_ia (la IA no altera el ONNX)",
+    "test_mismo_prompt_temperatura_cero_y_json_en_todos_los_proveedores": "_llamada_para (prompt unificado, temperature=0)",
+    "test_el_prompt_incluye_probabilidades_y_rescatable_y_prohibe_cambiarlos": "_llamada_para (prompt unificado, temperature=0)",
+    "test_groq_con_mas_de_5_fotos_no_se_usa": "claves_candidatas",
+    "test_misma_entrada_misma_explicacion_sin_gastar_cupo": "clave_cache_ia / leer_cache_ia (caché)",
+    "test_sin_sesion_la_cache_no_gasta_la_cuota": "clave_cache_ia / leer_cache_ia (caché)",
+    "test_la_cache_distingue_la_vista_y_las_fotos": "clave_cache_ia / leer_cache_ia (caché)",
+    "test_la_plantilla_no_se_guarda_en_la_cache": "clave_cache_ia / leer_cache_ia (caché)",
+    "test_sin_consentimiento_no_se_usa_ni_la_cache": "clave_cache_ia / leer_cache_ia (caché)",
+    "test_historial_guarda_proveedor_y_modelo": "guardar_inspeccion / obtener_historial (proveedor y modelo)",
+    "test_migracion_de_proveedor_y_modelo_sin_perder_datos": "inicializar_bd (migración ia_proveedor)",
+    "test_estado_muestra_el_pool_sin_claves": "estado (pool_ia)",
+    "test_d05_una_foto_interior_deja_rescatable_en_null": "analizar (D-05: vista en una foto)",
+    "test_d05_sin_vista_sigue_siendo_exterior": "analizar (D-05: vista en una foto)",
+    "test_d05_vista_invalida_400": "analizar (D-05: vista en una foto)",
+    "test_d05_interior_con_ia_trae_el_tipo_pero_no_el_rescatable": "analizar (D-05: vista en una foto)",
+    "test_feria_off_todo_como_hoy": "configurar_explicacion_ia (modo feria)",
+    "test_feria_on_sube_los_limites_sin_cuenta": "configurar_explicacion_ia (modo feria)",
+    "test_feria_valores_configurables": "configurar_explicacion_ia (modo feria)",
+    "test_feria_por_minuto_pasa_a_la_siguiente_clave_y_luego_sin_explicacion": "obtener_explicacion (modo feria por minuto)",
+    "test_cli_agregar_listar_activar_desactivar_y_estado": "pool_keys.py (CLI)",
+    "test_cli_estado_muestra_la_espera": "pool_keys.py (CLI)",
+    "test_d09_groq_sin_razonamiento_y_con_salida_acotada": "_intentar_con_clave / cuerpo_compatible (D-09: Groq)",
+    "test_d09_openrouter_no_recibe_los_parametros_de_groq": "_intentar_con_clave / cuerpo_compatible (D-09: Groq)",
+    "test_d09_groq_que_no_responde_pasa_a_la_siguiente_clave_sin_reintentar": "_intentar_con_clave / cuerpo_compatible (D-09: Groq)",
+    "test_d09_groq_como_ultima_clave_tampoco_se_reintenta": "_intentar_con_clave / cuerpo_compatible (D-09: Groq)",
+    "test_d09_429_request_too_large_no_se_reintenta_y_espera_un_minuto": "_intentar_con_clave / cuerpo_compatible (D-09: Groq)",
+    "test_d09_clasificar_request_too_large": "_intentar_con_clave / cuerpo_compatible (D-09: Groq)",
+    "test_d09_gemini_conserva_sus_reintentos_ante_un_timeout": "_intentar_con_clave / cuerpo_compatible (D-09: Groq)",
+    # test_rotacion_modelos
+    "test_se_usa_el_primer_modelo_del_orden": "_intentar_modelos_gemini / llamar_gemini (rotación por modelo)",
+    "test_429_aparta_solo_ese_modelo_y_responde_el_siguiente": "_intentar_modelos_gemini / llamar_gemini (rotación por modelo)",
+    "test_429_por_cupo_diario_aparta_el_modelo_hasta_la_medianoche_del_pacifico": "_intentar_modelos_gemini / llamar_gemini (rotación por modelo)",
+    "test_503_500_o_timeout_apartan_el_modelo_60_s": "_intentar_modelos_gemini / llamar_gemini (rotación por modelo)",
+    "test_respuesta_fuera_de_esquema_pasa_al_siguiente_sin_apartar": "_intentar_modelos_gemini / llamar_gemini (rotación por modelo)",
+    "test_modelo_retirado_404_se_aparta_hasta_la_medianoche": "_intentar_modelos_gemini / llamar_gemini (rotación por modelo)",
+    "test_con_todos_los_modelos_apartados_pasa_a_la_siguiente_clave": "_intentar_modelos_gemini / llamar_gemini (rotación por modelo)",
+    "test_todos_apartados_y_sin_otra_clave_queda_el_resultado_del_onnx": "_intentar_modelos_gemini / llamar_gemini (rotación por modelo)",
+    "test_clave_invalida_desactiva_la_clave_entera": "_intentar_modelos_gemini / llamar_gemini (rotación por modelo)",
+    "test_al_activar_la_clave_se_liberan_sus_modelos": "_intentar_modelos_gemini / llamar_gemini (rotación por modelo)",
+    "test_estado_indica_el_siguiente_modelo_disponible": "_intentar_modelos_gemini / llamar_gemini (rotación por modelo)",
+    "test_modelo_que_no_acepta_instruccion_de_sistema_recibe_el_prompt_en_el_mensaje": "_intentar_modelos_gemini / llamar_gemini (rotación por modelo)",
+    "test_sin_sistema_el_texto_se_valida_igual_y_si_no_es_json_falla": "_intentar_modelos_gemini / llamar_gemini (rotación por modelo)",
+    "test_el_prompt_en_el_mensaje_es_el_unificado": "_intentar_modelos_gemini / llamar_gemini (rotación por modelo)",
+    "test_la_ficha_muestra_el_modelo_real_usado": "_intentar_modelos_gemini / llamar_gemini (rotación por modelo)",
+    "test_configuracion_con_orden_y_exclusion": "_intentar_modelos_gemini / llamar_gemini (rotación por modelo)",
+    "test_sin_orden_queda_el_comportamiento_de_siempre": "_intentar_modelos_gemini / llamar_gemini (rotación por modelo)",
+    "test_modelos_sin_sistema_configurables": "_intentar_modelos_gemini / llamar_gemini (rotación por modelo)",
+    "test_el_orden_lo_usa_la_app_al_arrancar": "_intentar_modelos_gemini / llamar_gemini (rotación por modelo)",
+    "test_cli_estado_muestra_los_modelos_en_espera": "_intentar_modelos_gemini / llamar_gemini (rotación por modelo)",
+    "test_migracion_agrega_la_columna_sin_perder_claves": "_intentar_modelos_gemini / llamar_gemini (rotación por modelo)",
+    # test_discrepancia_nivel
+    "test_moderado_con_colapso_en_el_texto_marca_discrepancia_sin_cambiar_el_nivel": "marcar_discrepancia_de_nivel (D-08)",
+    "test_mismo_nivel_no_marca_nada": "marcar_discrepancia_de_nivel (D-08)",
+    "test_un_nivel_menor_tambien_es_discrepancia": "marcar_discrepancia_de_nivel (D-08)",
+    "test_una_negacion_no_cuenta_como_mencion": "marcar_discrepancia_de_nivel (D-08)",
+    "test_se_agrega_a_la_discrepancia_que_ya_dio_la_ia": "marcar_discrepancia_de_nivel (D-08)",
+    "test_edificio_compara_cada_frase_con_las_fotos_que_nombra": "marcar_discrepancia_de_nivel (D-08)",
+    "test_frase_sin_foto_acepta_el_nivel_de_cualquier_foto_del_edificio": "marcar_discrepancia_de_nivel (D-08)",
+    "test_tambien_con_groq_y_queda_en_el_historial_y_el_excel": "marcar_discrepancia_de_nivel (D-08)",
+    "test_la_plantilla_no_se_revisa": "marcar_discrepancia_de_nivel (D-08)",
+    "test_niveles_mencionados_distintos": "marcar_discrepancia_de_nivel (D-08)",
 }
 
 # Funciones principales de main.py para el cuadro de cobertura (en orden de lectura).
@@ -161,7 +252,16 @@ FUNCIONES_PRINCIPALES = [
     "registro", "login", "logout", "eliminar_cuenta", "crear_miniatura", "borrar_miniaturas", "miniatura_de_foto",
     "estado", "_leer_archivo_limitado", "analizar", "analizar_edificio", "historial", "_llenar_hoja", "exportar_historial_excel",
     "_bloque_explicacion_pdf", "exportar_historial_pdf", "texto_explicacion",
+    # Pool de claves, caché y modo feria
+    "preparar_pool", "asegurar_modelo_groq", "_clave_gemini_para_configurar", "clave_cache_ia", "leer_cache_ia",
+    "guardar_cache_ia", "_es_cupo_diario", "_penalizacion", "validar_respuesta_ia", "_llamada_para",
+    "_intentar_con_clave", "claves_candidatas", "motivo_ia_no_disponible", "_registrar_resultado_clave",
+    "_motivo_final", "explicacion_para", "_resumen_pool", "_recomendacion_una_foto",
+    "niveles_mencionados_distintos", "marcar_discrepancia_de_nivel",
+    "cuerpo_compatible", "llamar_gemini", "modelos_disponibles_de", "_apartar_modelo", "_espera_de_modelo",
+    "_intentar_modelos_gemini",
 ]
+MODULOS_EXTRA = ("pool_claves.py", "pool_keys.py")
 
 
 def tabla_pruebas():
@@ -198,12 +298,24 @@ def cobertura_por_funcion():
     funciones = datos["functions"]
     lineas = ["| Función (main.py) | Sentencias | Sin cubrir | Cobertura |", "|---|---:|---:|---:|"]
     for nombre in FUNCIONES_PRINCIPALES:
+        if nombre not in funciones:
+            continue
         resumen = funciones[nombre]["summary"]
         lineas.append(f"| {nombre} | {resumen['num_statements']} | {resumen['missing_lines']} | "
                       f"{resumen['percent_covered_display']} % |")
     total = datos["summary"]
     lineas.append(f"| **main.py (total)** | **{total['num_statements']}** | **{total['missing_lines']}** | "
                   f"**{total['percent_covered_display']} %** |")
+    informe = json.load(open(CARPETA / "coverage.json", encoding="utf-8"))
+    for modulo in MODULOS_EXTRA:
+        extra = informe["files"].get(modulo)
+        if extra:
+            r = extra["summary"]
+            lineas.append(f"| **{modulo} (total)** | **{r['num_statements']}** | **{r['missing_lines']}** | "
+                          f"**{r['percent_covered_display']} %** |")
+    r = informe["totals"]
+    lineas.append(f"| **Total de los módulos** | **{r['num_statements']}** | **{r['missing_lines']}** | "
+                  f"**{r['percent_covered_display']} %** |")
     (CARPETA / "cobertura_por_funcion.md").write_text("\n".join(lineas) + "\n", encoding="utf-8")
     sin_clasificar = [n for n in funciones if n and n not in FUNCIONES_PRINCIPALES]
     return total, len(funciones), sin_clasificar

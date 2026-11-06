@@ -247,7 +247,9 @@ def test_sin_sesion_con_consentimiento_usa_gemini_y_no_guarda(app, gemini):
 
 def test_limite_de_explicaciones_sin_sesion(app, gemini):
     gemini.activar()
-    resultados = [analizar(app, acepta_envio_ia="true").json()["explicacion"] for _ in range(4)]
+    # Fotos distintas: una foto repetida sale de la caché sin gastar el límite (ver test_pool_ia.py).
+    resultados = [analizar(app, jpeg(color=(40 * i, 90, 60)), acepta_envio_ia="true").json()["explicacion"]
+                  for i in range(4)]
     assert [r["fuente"] for r in resultados[:3]] == ["gemini"] * 3
     assert resultados[3]["motivo_respaldo"] == "limite_ia" and len(gemini.llamadas) == 3
 

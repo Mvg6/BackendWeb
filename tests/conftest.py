@@ -42,6 +42,11 @@ GLOBALES = [
     "reconfigurar_ia_pendiente", "_ultima_configuracion_ia", "_tarea_configuracion_ia", "genai", "_esperar",
     "limite_analisis_sin_sesion", "limite_registros", "limite_ia_sin_sesion",
     "TIEMPO_TOTAL_IA_SEGUNDOS", "TIMEOUT_IA_SEGUNDOS", "ESPERAS_REINTENTO_IA",
+    # Pool de claves y modo feria
+    "_fernet_pool", "_id_clave_gemini", "_clientes_gemini", "_claves_a_ocultar", "config_ia",
+    "modo_feria", "limite_rpm_ia", "_enviar_compatible", "COOLDOWN_TRANSITORIO_SEGUNDOS",
+    # Rotación por modelo de Gemini
+    "modelos_gemini_orden", "_modelos_sin_sistema", "_espera_modelos_sin_pool",
 ]
 
 
