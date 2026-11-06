@@ -37,7 +37,7 @@ def test_excel_se_genera_con_sus_hojas_y_rotulos(app, historial_con_datos):
         assert str(hoja["A1"].value).startswith("Historial de usuario_a, generado el ")
         assert hoja.freeze_panes == "A4"
     assert [c.value for c in inspecciones[3]] == main.ENCABEZADOS_INSPECCIONES
-    assert [c.value for c in fotos[3]] == ["Inspección"] + main.ENCABEZADOS_FOTOS
+    assert [c.value for c in fotos[3]] == ["Ficha N.º"] + main.ENCABEZADOS_FOTOS
 
 
 def test_excel_marca_el_origen_de_cada_valor(app, historial_con_datos):
@@ -66,7 +66,7 @@ def test_pdf_se_genera_con_titulo_y_secciones(app, historial_con_datos):
     assert "historial.pdf" in r.headers["content-disposition"]
     texto = texto_pdf(r.content)
     for rotulo in ("Historial de usuario_a, generado el", "2 inspecciones, ordenadas por prioridad",
-                   "Inspección #1", "Inspección #2", "Daño general:", "Construcción:", "Rescatable:", "Recomendación:",
+                   "Ficha N.º 1", "Ficha N.º 2", "Daño general:", "Construcción:", "Rescatable:", "Recomendación:",
                    "Explicación IA", "Estructura", "Viabilidad:", "Acciones", "Discrepancia con la clasificación:",
                    "(estimación preliminar por reglas)", "(detectado por IA externa, referencial)",
                    "No evaluado (interior)", "Explicación IA no disponible (desactivado)",

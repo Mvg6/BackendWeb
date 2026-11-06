@@ -334,6 +334,18 @@ def inicializar_bd():
     # NULL = inspección anterior a las cuentas: no se muestra a ningún usuario.
     if "usuario_id" not in columnas_inspecciones:
         cur.execute("ALTER TABLE inspecciones ADD COLUMN usuario_id INTEGER REFERENCES usuarios(id)")
+    # Número de ficha por usuario (1, 2, 3... de cada uno); el id sigue siendo el interno.
+    # Relleno: las inspecciones de cada usuario, en orden de id. Las que no tienen dueño, NULL.
+    if "numero_usuario" not in columnas_inspecciones:
+        cur.execute("ALTER TABLE inspecciones ADD COLUMN numero_usuario INTEGER")
+        cur.execute("""
+            UPDATE inspecciones SET numero_usuario = (
+                SELECT COUNT(*) FROM inspecciones AS previa
+                WHERE previa.usuario_id = inspecciones.usuario_id AND previa.id <= inspecciones.id)
+            WHERE usuario_id IS NOT NULL
+        """)
+    cur.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_inspecciones_numero_usuario "
+                "ON inspecciones(usuario_id, numero_usuario)")
     if "miniatura" not in columnas:
         cur.execute("ALTER TABLE analisis ADD COLUMN miniatura TEXT")
     # "modelo" o "reglas". Relleno de las filas anteriores: un rescatable guardado
@@ -403,7 +415,9 @@ def inicializar_bd():
 
 def guardar_inspeccion(veredicto, fotos, explicacion, no_entrenadas, usuario_id, miniaturas):
     """Guarda la inspección del usuario y todas sus fotos en una sola transacción.
-    `miniaturas[i]` es el nombre del archivo de la miniatura de fotos[i] (o None)."""
+    `miniaturas[i]` es el nombre del archivo de la miniatura de fotos[i] (o None).
+    Devuelve (id interno, número de ficha del usuario). El número se calcula en el mismo
+    INSERT (SQLite admite un solo escritor a la vez) y el índice único impide repetirlo."""
     fecha = datetime.now().strftime("%Y-%m-%d %H:%M")
     conn = sqlite3.connect(RUTA_BD)
     try:
@@ -412,16 +426,20 @@ def guardar_inspeccion(veredicto, fotos, explicacion, no_entrenadas, usuario_id,
                 INSERT INTO inspecciones (fecha, nivel_dano_general, rescatable_general,
                                           rescatable_fuente, tipo_construccion_general,
                                           tipo_construccion_fuente, recomendacion, explicacion,
-                                          cabezas_no_entrenadas, usuario_id, ia_proveedor, ia_modelo)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                                          cabezas_no_entrenadas, usuario_id, ia_proveedor, ia_modelo,
+                                          numero_usuario)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+                        (SELECT COALESCE(MAX(numero_usuario), 0) + 1 FROM inspecciones WHERE usuario_id = ?))
             """, (
                 fecha, veredicto["nivel_dano"], veredicto["rescatable"], veredicto["rescatable_fuente"],
                 veredicto["tipo_construccion"], veredicto["tipo_construccion_fuente"],
                 veredicto["recomendacion"],
                 json.dumps(explicacion, ensure_ascii=False) if explicacion else None,
-                json.dumps(list(no_entrenadas)), usuario_id, *proveedor_y_modelo_ia(explicacion),
+                json.dumps(list(no_entrenadas)), usuario_id, *proveedor_y_modelo_ia(explicacion), usuario_id,
             ))
             inspeccion_id = cur.lastrowid
+            (numero_usuario,) = conn.execute("SELECT numero_usuario FROM inspecciones WHERE id = ?",
+                                             (inspeccion_id,)).fetchone()
             conn.executemany("""
                 INSERT INTO analisis (inspeccion_id, vista, nombre_archivo, tipo_construccion,
                                       tipo_construccion_fuente, nivel_dano, rescatable,
@@ -439,7 +457,7 @@ def guardar_inspeccion(veredicto, fotos, explicacion, no_entrenadas, usuario_id,
             ])
     finally:
         conn.close()
-    return inspeccion_id
+    return inspeccion_id, numero_usuario
 
 
 PRIORIDAD = {"Severo/Colapso": 1, "Moderado": 2, "Leve": 3}
@@ -453,7 +471,7 @@ def obtener_historial(usuario_id):
         inspecciones = conn.execute("""
             SELECT id, fecha, nivel_dano_general, tipo_construccion_general,
                    tipo_construccion_fuente, rescatable_general, rescatable_fuente,
-                   recomendacion, explicacion, cabezas_no_entrenadas, ia_proveedor, ia_modelo
+                   recomendacion, explicacion, cabezas_no_entrenadas, ia_proveedor, ia_modelo, numero_usuario
             FROM inspecciones WHERE usuario_id = ? ORDER BY id
         """, (usuario_id,)).fetchall()
         filas_fotos = conn.execute("""
@@ -481,11 +499,12 @@ def obtener_historial(usuario_id):
 
     historial = []
     for (inspeccion_id, fecha, dano, tipo, fuente_tipo, rescatable, fuente, recomendacion,
-         explicacion, no_entrenadas, ia_proveedor, ia_modelo) in inspecciones:
+         explicacion, no_entrenadas, ia_proveedor, ia_modelo, numero_usuario) in inspecciones:
         fotos = fotos_por_inspeccion.get(inspeccion_id, [])
         exteriores = sum(f["vista"] == "exterior" for f in fotos)
         historial.append({
-            "inspeccion_id": inspeccion_id,
+            "inspeccion_id": inspeccion_id,  # interno: rutas de las fotos y control de acceso
+            "numero_usuario": numero_usuario,  # el que ve el usuario: "Ficha N.º X"
             "fecha": fecha,
             "total_fotos": len(fotos),
             "usando_modelo_real": all(f["usando_modelo_real"] for f in fotos),
@@ -2407,16 +2426,16 @@ def borrar_miniaturas(nombres):
 
 def guardar_inspeccion_de_usuario(veredicto, fotos, contenidos, explicacion, usuario):
     """Crea las miniaturas y guarda la inspección; si falla el guardado, no deja
-    miniaturas huérfanas. Devuelve (inspeccion_id, miniaturas)."""
+    miniaturas huérfanas. Devuelve (inspeccion_id, numero_usuario, miniaturas)."""
     miniaturas = [crear_miniatura(b) for b in contenidos]
     try:
-        inspeccion_id = guardar_inspeccion(
+        inspeccion_id, numero_usuario = guardar_inspeccion(
             veredicto, fotos, explicacion, cabezas_no_entrenadas, usuario["id"], miniaturas
         )
     except Exception:
         borrar_miniaturas(miniaturas)
         raise
-    return inspeccion_id, miniaturas
+    return inspeccion_id, numero_usuario, miniaturas
 
 
 @app.get("/inspecciones/{inspeccion_id}/fotos/{indice}")
@@ -2546,9 +2565,9 @@ async def analizar(
         resultado["tipo_construccion_fuente"] = explicacion["fuente"]
         resultado["recomendacion"] = _recomendacion_una_foto(resultado, vista)
     if usuario is None:
-        inspeccion_id, miniaturas = None, [None]
+        inspeccion_id, numero_usuario, miniaturas = None, None, [None]
     else:
-        inspeccion_id, miniaturas = guardar_inspeccion_de_usuario(
+        inspeccion_id, numero_usuario, miniaturas = guardar_inspeccion_de_usuario(
             resultado,
             [{"vista": vista, "nombre_archivo": archivo.filename or "sin_nombre.jpg", **resultado}],
             [bytes_imagen], explicacion, usuario,
@@ -2561,7 +2580,8 @@ async def analizar(
         "explicacion": explicacion,
         "cabezas_no_entrenadas": list(cabezas_no_entrenadas),
         "guardado": inspeccion_id is not None,
-        "inspeccion_id": inspeccion_id,
+        "inspeccion_id": inspeccion_id,  # interno: rutas de las fotos
+        "numero_usuario": numero_usuario,  # el que ve el usuario: "Ficha N.º X"
         "tiene_miniatura": miniaturas[0] is not None,
     }
 
@@ -2651,16 +2671,17 @@ async def analizar_edificio(
         else:  # la recomendación sin exteriores no cambia; la nota aclara de dónde salió el tipo
             veredicto["nota"] = nota_sin_exteriores(explicacion["fuente"])
     if usuario is None:
-        inspeccion_id, miniaturas = None, [None] * len(fotos)
+        inspeccion_id, numero_usuario, miniaturas = None, None, [None] * len(fotos)
     else:
-        inspeccion_id, miniaturas = guardar_inspeccion_de_usuario(
+        inspeccion_id, numero_usuario, miniaturas = guardar_inspeccion_de_usuario(
             veredicto, fotos, contenidos, explicacion, usuario
         )
     for foto, miniatura in zip(fotos, miniaturas):
         foto["tiene_miniatura"] = miniatura is not None
 
     return {
-        "inspeccion_id": inspeccion_id,
+        "inspeccion_id": inspeccion_id,  # interno: rutas de las fotos
+        "numero_usuario": numero_usuario,  # el que ve el usuario: "Ficha N.º X"
         "guardado": inspeccion_id is not None,
         "total_fotos": len(fotos),
         "usando_modelo_real": all(f["usando_modelo_real"] for f in fotos),
@@ -2687,8 +2708,9 @@ NO_EVALUADO_INTERIOR = "No evaluado (interior)"
 NO_EVALUADO_SIN_EXTERIORES = "No evaluado (sin fotos exteriores)"
 NO_DISPONIBLE_SIN_ENTRENAR = "No disponible: el modelo aún no está entrenado para esto"
 
+ROTULO_FICHA = "Ficha N.º"
 ENCABEZADOS_INSPECCIONES = [
-    "Inspección", "Fecha", "Daño general", "Construcción", "Rescatable",
+    ROTULO_FICHA, "Fecha", "Daño general", "Construcción", "Rescatable",
     "Fotos exteriores", "Fotos interiores", "Recomendación", "Nota", "Explicación IA",
 ]
 SECCIONES_EXPLICACION = (("Estructura", "estructura"), ("Estado", "estado"))
@@ -2756,7 +2778,7 @@ def _texto_veredicto(inspeccion, campo):
 def _fila_inspeccion(inspeccion):
     v = inspeccion["veredicto"]
     return [
-        inspeccion["inspeccion_id"], inspeccion["fecha"], v["nivel_dano"],
+        inspeccion["numero_usuario"], inspeccion["fecha"], v["nivel_dano"],
         _texto_veredicto(inspeccion, "tipo_construccion"), _texto_veredicto(inspeccion, "rescatable"),
         v["fotos_exteriores"], v["fotos_interiores"], v["recomendacion"], v["nota"] or "",
         texto_explicacion(inspeccion["explicacion"]),
@@ -2807,8 +2829,8 @@ def exportar_historial_excel(usuario=Depends(usuario_requerido)):
     _llenar_hoja(
         libro.create_sheet("Fotos"),
         titulo,
-        ["Inspección"] + ENCABEZADOS_FOTOS,
-        [[i["inspeccion_id"]] + _fila_foto(f) for i in historial for f in i["fotos"]],
+        [ROTULO_FICHA] + ENCABEZADOS_FOTOS,
+        [[i["numero_usuario"]] + _fila_foto(f) for i in historial for f in i["fotos"]],
     )
 
     buffer = io.BytesIO()
@@ -2898,7 +2920,7 @@ def exportar_historial_pdf(usuario=Depends(usuario_requerido)):
         v = inspeccion["veredicto"]
         bloque = [
             Paragraph(
-                f"Inspección #{inspeccion['inspeccion_id']} · {escape(inspeccion['fecha'] or '')}",
+                f"{ROTULO_FICHA} {inspeccion['numero_usuario']} · {escape(inspeccion['fecha'] or '')}",
                 estilos["Heading3"],
             ),
             Paragraph(
